@@ -70,6 +70,14 @@ class ResumeCrew():
         )
 
     @agent
+    def cover_letter_writer(self) -> Agent:
+        return Agent(
+            config=self.agents_config['cover_letter_writer'],
+            verbose=True,
+            llm=LLM("o1")
+        )
+
+    @agent
     def report_generator(self) -> Agent:
         return Agent(
             config=self.agents_config['report_generator'],

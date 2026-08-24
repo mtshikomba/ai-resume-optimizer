@@ -152,7 +152,7 @@ generate_cover_letter_task:
 
   expected_output: >
     A polished cover letter in markdown format saved as cover_letter.md.
-  agent: resume_writer
+  agent: cover_letter_writer
   context: [optimize_resume_task, analyze_job_task, research_company_task]
 
 generate_report_task:
