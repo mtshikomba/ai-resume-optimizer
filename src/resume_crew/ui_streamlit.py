@@ -125,34 +125,69 @@ def main():
                     log_box = st.empty()
                     try:
                         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=str(PROJECT_ROOT), env=env, text=True)
-                        # Stream output lines
+                        # Stream output lines and show live artifact status while waiting
+                        import select, time
                         logs = ""
-                        for line in proc.stdout:
-                            logs += line
-                            log_box.text_area("Pipeline logs", value=logs, height=400)
+                        status_box = st.empty()
+                        log_box = st.empty()
+
+                        artifacts = {
+                            "cover_letter": out_dir / "cover_letter.md",
+                            "optimized_resume": out_dir / "optimized_resume.md",
+                            "final_report": out_dir / "final_report.md",
+                            "job_analysis": out_dir / "job_analysis.json",
+                            "resume_optimization": out_dir / "resume_optimization.json",
+                            "company_research": out_dir / "company_research.json",
+                        }
+
+                        start_time = time.time()
+                        timeout = 300  # default timeout used by runner
+
+                        # Use select to wait for stdout with timeout, allowing periodic checks
+                        while True:
+                            # Check for available stdout
+                            rlist, _, _ = select.select([proc.stdout], [], [], 1.0)
+                            if rlist:
+                                line = proc.stdout.readline()
+                                if not line:
+                                    # EOF
+                                    break
+                                logs += line
+                                log_box.text_area("Pipeline logs", value=logs, height=400)
+
+                            # Update artifact status
+                            status_lines = []
+                            for name, path in artifacts.items():
+                                status = "✅" if path.exists() else "⏳"
+                                status_lines.append(f"{status} {name} -> {path.name}")
+                            elapsed = int(time.time() - start_time)
+                            status_text = "\n".join(status_lines) + f"\n\nElapsed: {elapsed}s"
+                            status_box.text(status_text)
+
+                            # Break if process ended
+                            if proc.poll() is not None:
+                                # read remaining stdout
+                                for line in proc.stdout:
+                                    if line:
+                                        logs += line
+                                break
+
                         proc.wait()
                         logs += f"\nProcess exited with code {proc.returncode}\n"
                         log_box.text_area("Pipeline logs", value=logs, height=400)
                         st.success("Pipeline finished")
 
                         # After process completes, check for generated artifacts and offer downloads
-                        artifacts = {
-                            "Cover Letter": out_dir / "cover_letter.md",
-                            "Optimized Resume": out_dir / "optimized_resume.md",
-                            "Final Report": out_dir / "final_report.md",
-                            "Job Analysis (JSON)": out_dir / "job_analysis.json",
-                            "Resume Optimization (JSON)": out_dir / "resume_optimization.json",
-                            "Company Research (JSON)": out_dir / "company_research.json",
-                        }
                         for label, path in artifacts.items():
+                            pretty_label = label.replace("_", " ").title()
                             if path.exists():
                                 try:
                                     data = path.read_bytes()
-                                    st.download_button(label=f"Download: {label}", data=data, file_name=path.name)
+                                    st.download_button(label=f"Download: {pretty_label}", data=data, file_name=path.name)
                                 except Exception as e:
                                     st.warning(f"Could not read {path.name} for download: {e}")
                             else:
-                                st.info(f"{label} not generated yet.")
+                                st.info(f"{pretty_label} not generated.")
 
                     except Exception as e:
                         st.error(f"Failed to run pipeline: {e}")
