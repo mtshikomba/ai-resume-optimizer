@@ -74,10 +74,19 @@ def main():
             save_uploaded_file(uploaded_resume, resume_dest)
             meta["resume_file"] = str(resume_dest)
         elif selected_resume:
-            src = PROJECT_ROOT / selected_resume
-            dest = out_dir / src.name
-            shutil.copy(src, dest)
-            meta["resume_file"] = str(dest)
+            # selected_resume may be a relative path (e.g., 'knowledge/CV_Mohan.pdf') or an absolute path.
+            sel_path = Path(selected_resume)
+            if sel_path.is_absolute():
+                src = sel_path
+            else:
+                # Ensure we join with PROJECT_ROOT and normalize leading slashes
+                src = (PROJECT_ROOT / selected_resume.lstrip("/"))
+            if not src.exists():
+                st.error(f"Selected resume not found: {src}. Please upload a resume or verify the knowledge folder path.")
+            else:
+                dest = out_dir / src.name
+                shutil.copy(src, dest)
+                meta["resume_file"] = str(dest)
         else:
             st.warning("No resume selected or uploaded — the pipeline may fail without a resume.")
 
