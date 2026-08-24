@@ -45,6 +45,27 @@ def run_from_inputs(inputs_json_path: str) -> dict:
     # Note: depending on CrewAI runtime, kickoff may be blocking.
     try:
         crew.crew().kickoff(inputs=kickoff_inputs)
-        return {"status": "ok", "output_dir": str(out_dir)}
+        # After kickoff, validate expected output files exist in the output directory
+        expected = {
+            "job_analysis": out_dir / "job_analysis.json",
+            "resume_optimization": out_dir / "resume_optimization.json",
+            "company_research": out_dir / "company_research.json",
+            "optimized_resume": out_dir / "optimized_resume.md",
+            "cover_letter": out_dir / "cover_letter.md",
+            "final_report": out_dir / "final_report.md",
+        }
+        outputs = {}
+        missing = []
+        for name, path in expected.items():
+            if path.exists():
+                outputs[name] = str(path)
+            else:
+                missing.append(name)
+
+        status = "ok"
+        if missing:
+            status = "partial" if outputs else "missing"
+
+        return {"status": status, "output_dir": str(out_dir), "outputs": outputs, "missing": missing}
     except Exception as e:
         return {"status": "error", "error": str(e)}

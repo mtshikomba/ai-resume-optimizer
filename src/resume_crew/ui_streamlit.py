@@ -134,6 +134,26 @@ def main():
                         logs += f"\nProcess exited with code {proc.returncode}\n"
                         log_box.text_area("Pipeline logs", value=logs, height=400)
                         st.success("Pipeline finished")
+
+                        # After process completes, check for generated artifacts and offer downloads
+                        artifacts = {
+                            "Cover Letter": out_dir / "cover_letter.md",
+                            "Optimized Resume": out_dir / "optimized_resume.md",
+                            "Final Report": out_dir / "final_report.md",
+                            "Job Analysis (JSON)": out_dir / "job_analysis.json",
+                            "Resume Optimization (JSON)": out_dir / "resume_optimization.json",
+                            "Company Research (JSON)": out_dir / "company_research.json",
+                        }
+                        for label, path in artifacts.items():
+                            if path.exists():
+                                try:
+                                    data = path.read_bytes()
+                                    st.download_button(label=f"Download: {label}", data=data, file_name=path.name)
+                                except Exception as e:
+                                    st.warning(f"Could not read {path.name} for download: {e}")
+                            else:
+                                st.info(f"{label} not generated yet.")
+
                     except Exception as e:
                         st.error(f"Failed to run pipeline: {e}")
 
