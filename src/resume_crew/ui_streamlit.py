@@ -105,7 +105,37 @@ def main():
         for p in sorted(out_dir.iterdir()):
             st.write(f"- {p.name}")
 
-        st.info("Next steps: wire these inputs into the CrewAI pipeline (next task).")
+        st.info("Inputs saved. You can now run the pipeline for this input folder below.")
+
+        # Run pipeline now
+        run_btn = st.button("Run pipeline now")
+        if run_btn:
+            inputs_json = out_dir / "inputs.json"
+            if not inputs_json.exists():
+                st.error("inputs.json not found; cannot run pipeline.")
+            else:
+                st.info("Starting pipeline — streaming logs below.")
+                import subprocess, sys, os
+                python = sys.executable or "python"
+                env = os.environ.copy()
+                env["PYTHONPATH"] = str(PROJECT_ROOT / "src")
+                # Use -u for unbuffered output so we can stream logs
+                cmd = [python, "-u", "-m", "resume_crew.runner_cli", str(inputs_json)]
+                with st.spinner("Running pipeline..."):
+                    log_box = st.empty()
+                    try:
+                        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=str(PROJECT_ROOT), env=env, text=True)
+                        # Stream output lines
+                        logs = ""
+                        for line in proc.stdout:
+                            logs += line
+                            log_box.text_area("Pipeline logs", value=logs, height=400)
+                        proc.wait()
+                        logs += f"\nProcess exited with code {proc.returncode}\n"
+                        log_box.text_area("Pipeline logs", value=logs, height=400)
+                        st.success("Pipeline finished")
+                    except Exception as e:
+                        st.error(f"Failed to run pipeline: {e}")
 
 
 if __name__ == "__main__":
