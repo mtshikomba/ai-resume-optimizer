@@ -41,6 +41,53 @@ An AI-powered tool that optimizes your resume for specific job applications usin
     - Optional:
         - See `.env.example` for additional optional APIs
 
+Using OpenAI (hosted)
+
+This project supports using a hosted OpenAI model instead of running models locally. The recommended approach is to provide an OpenAI API key and either set it in your environment or paste it into the Streamlit UI advanced panel for a single run. The UI injects the key into the runner subprocess environment but does not persist it to disk.
+
+Examples — set the key in different environments:
+
+- Docker (recommended for reproducible installs):
+
+```bash
+# pass the OpenAI API key into the container runtime
+docker run --rm -it -p 8501:8501 \
+  -e OPENAI_API_KEY="$OPENAI_API_KEY" \
+  -v "$(pwd)":/work -w /work tonykip/crewai:cli bash -lc "\
+    python -m pip install --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir streamlit requests beautifulsoup4 && \
+    export PYTHONPATH=/work/src && \
+    streamlit run src/resume_crew/ui_streamlit.py --server.port 8501 --server.headless true --server.enableCORS false"
+```
+
+- Docker Compose: set environment variable in `docker-compose.yml` or pass via your environment when launching `docker-compose up`.
+
+- uv-managed environment (inside a Linux container or Linux host):
+
+```bash
+# ensure env var is available to the uv runtime
+export OPENAI_API_KEY="$OPENAI_API_KEY"
+uv sync --no-dev
+uv run -- streamlit run src/resume_crew/ui_streamlit.py --server.port 8501 --server.headless true
+```
+
+- Local virtualenv (developer workflow):
+
+```bash
+export OPENAI_API_KEY="$OPENAI_API_KEY"
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .
+pip install streamlit requests beautifulsoup4
+streamlit run src/resume_crew/ui_streamlit.py
+```
+
+Streamlit UI notes
+
+- Advanced options: open the "Advanced" panel in the UI to select "OpenAI" as the provider and optionally paste the API key into the secure field for a one-off run (the key is supplied only to the runner subprocess and not saved to disk).
+- Model selection: the UI exposes a friendly alias "Free (free-optimal)" which maps to a default hosted model id (currently resolved to OpenAI gpt-3.5-turbo). You can override it via the UI or by setting RESUME_CREW_MODEL in your environment.
+
+
 ## Quick Start
 
 1. Save your resume as PDF in the project root under the `knowledge/` directory:
@@ -141,7 +188,7 @@ How the runner and "Run pipeline now" work
 Example runner CLI usage:
 
 ```bash
-python -m resume_crew.runner_cli output/mycompany_myjob_20260825_120000/inputs.json --timeout 600 --poll 2.0
+python -m resume_crew.runner_cli output/mycompany_myjob_20260825_120000/inputs.json --timeout 600 --poll 2.0 --provider openai --api-key $OPENAI_API_KEY  # or omit --api-key if OPENAI_API_KEY is set in the environment
 ```
 
 Expected outputs

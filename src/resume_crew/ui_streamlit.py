@@ -33,10 +33,22 @@ def main():
         custom_cover = st.text_area("Optional: custom text to mention in the cover letter", height=150)
 
         # Advanced options (hidden by default)
-        advanced = st.checkbox("Show advanced options (model selection)")
+        advanced = st.checkbox("Show advanced options (model & provider)")
         model_choice = None
+        provider_choice = None
+        provider_api_key = None
         if advanced:
-            model_options = ["Free (free-optimal)", "o1", "gpt-4", "Other"]
+            provider_options = ["OpenAI (Recommended)", "Hugging Face", "Other"]
+            selp = st.selectbox("Provider (advanced)", provider_options, index=0)
+            if selp == "OpenAI (Recommended)":
+                provider_choice = "openai"
+            elif selp == "Hugging Face":
+                provider_choice = "huggingface"
+            else:
+                provider_choice = st.text_input("Provider identifier (e.g., my-provider)")
+
+            st.write("Model selection (advanced)")
+            model_options = ["Free (free-optimal)", "gpt-3.5-turbo", "gpt-4", "Other"]
             sel = st.selectbox("Model (advanced)", model_options, index=0)
             if sel == "Other":
                 model_choice = st.text_input("Model identifier (e.g., my-org/custom-model)")
@@ -44,6 +56,9 @@ def main():
                 model_choice = "free-optimal"
             else:
                 model_choice = sel
+
+            # Optional API key input (not persisted to disk)
+            provider_api_key = st.text_input("Provider API key (optional)", type="password")
 
         submitted = st.form_submit_button("Generate")
 
@@ -66,9 +81,11 @@ def main():
             "job_url": job_url or "",
             "custom_cover_text_provided": bool(custom_cover),
         }
-        # Save model selection if the user overrode the default
+        # Save model/provider selection if the user overrode the default
         if advanced and model_choice:
             meta["model"] = model_choice
+        if advanced and provider_choice:
+            meta["provider"] = provider_choice
 
         # Save job file if uploaded
         if job_file:
@@ -134,10 +151,31 @@ def main():
                 st.info("Starting pipeline — streaming logs below.")
                 import subprocess, sys, os
                 python = sys.executable or "python"
+
+                # Build subprocess environment
                 env = os.environ.copy()
                 env["PYTHONPATH"] = str(PROJECT_ROOT / "src")
+
+                # Inject provider API key into the subprocess environment if provided (do not persist to disk)
+                if provider_api_key:
+                    env_key = None
+                    if provider_choice == "openai":
+                        env_key = "OPENAI_API_KEY"
+                    elif provider_choice == "huggingface":
+                        env_key = "HUGGINGFACE_API_KEY"
+                    else:
+                        env_key = f"{(provider_choice or "").upper()}_API_KEY"
+                    if env_key:
+                        env[env_key] = provider_api_key
+
                 # Use -u for unbuffered output so we can stream logs
                 cmd = [python, "-u", "-m", "resume_crew.runner_cli", str(inputs_json)]
+                # Pass provider/model flags to the CLI to ensure the runner sees them
+                if advanced and provider_choice:
+                    cmd.extend(["--provider", provider_choice])
+                if advanced and model_choice:
+                    cmd.extend(["--model", model_choice])
+
                 with st.spinner("Running pipeline..."):
                     log_box = st.empty()
                     try:

@@ -16,14 +16,16 @@ def main(argv=None):
     parser.add_argument("--timeout", type=int, default=300, help="Seconds to wait for artifacts (default 300)")
     parser.add_argument("--poll", type=float, default=2.0, help="Polling interval seconds (default 2.0)")
     parser.add_argument("--model", type=str, default=None, help="Optional model identifier to override inputs.json model")
+    parser.add_argument("--provider", type=str, default=None, help="Optional hosted provider to use (openai, huggingface)")
+    parser.add_argument("--api-key", type=str, default=None, help="Optional API key for the provider (will be set in the environment for the run)")
     args = parser.parse_args(argv)
 
     inputs_path = Path(args.inputs)
     if not inputs_path.exists():
         print(f"Inputs file not found: {inputs_path}")
         sys.exit(1)
-    print(f"Starting pipeline for {inputs_path} with timeout={args.timeout}s, poll={args.poll}s, model={args.model}...", flush=True)
-    result = run_from_inputs(str(inputs_path), timeout_seconds=args.timeout, poll_interval=args.poll, model_override=args.model)
+    print(f"Starting pipeline for {inputs_path} with timeout={args.timeout}s, poll={args.poll}s, model={args.model}, provider={args.provider}...", flush=True)
+    result = run_from_inputs(str(inputs_path), timeout_seconds=args.timeout, poll_interval=args.poll, model_override=args.model, provider=args.provider, api_key=args.api_key)
     print("Result:\n", flush=True)
     print(json.dumps(result, indent=2), flush=True)
     if result.get("status") != "ok":

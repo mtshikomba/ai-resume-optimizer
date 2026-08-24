@@ -78,7 +78,7 @@ class ResumeCrew():
         return Agent(
             config=self.agents_config['cover_letter_writer'],
             verbose=True,
-            llm=LLM("o1")
+            llm=LLM(self.model)
         )
 
     @agent
@@ -86,7 +86,7 @@ class ResumeCrew():
         return Agent(
             config=self.agents_config['report_generator'],
             verbose=True,
-            llm=LLM("o1")
+            llm=LLM(self.model)
         )
 
     @task
