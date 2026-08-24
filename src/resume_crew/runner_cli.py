@@ -15,14 +15,15 @@ def main(argv=None):
     parser.add_argument("inputs", help="Path to inputs.json")
     parser.add_argument("--timeout", type=int, default=300, help="Seconds to wait for artifacts (default 300)")
     parser.add_argument("--poll", type=float, default=2.0, help="Polling interval seconds (default 2.0)")
+    parser.add_argument("--model", type=str, default=None, help="Optional model identifier to override inputs.json model")
     args = parser.parse_args(argv)
 
     inputs_path = Path(args.inputs)
     if not inputs_path.exists():
         print(f"Inputs file not found: {inputs_path}")
         sys.exit(1)
-    print(f"Starting pipeline for {inputs_path} with timeout={args.timeout}s, poll={args.poll}s...", flush=True)
-    result = run_from_inputs(str(inputs_path), timeout_seconds=args.timeout, poll_interval=args.poll)
+    print(f"Starting pipeline for {inputs_path} with timeout={args.timeout}s, poll={args.poll}s, model={args.model}...", flush=True)
+    result = run_from_inputs(str(inputs_path), timeout_seconds=args.timeout, poll_interval=args.poll, model_override=args.model)
     print("Result:\n", flush=True)
     print(json.dumps(result, indent=2), flush=True)
     if result.get("status") != "ok":

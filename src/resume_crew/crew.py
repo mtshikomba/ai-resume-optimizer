@@ -16,17 +16,21 @@ class ResumeCrew():
     agents_config = 'config/agents.yaml'
     tasks_config = 'config/tasks.yaml'
 
-    def __init__(self, resume_pdf_path: str | None = None, out_dir: str | None = None) -> None:
+    def __init__(self, resume_pdf_path: str | None = None, out_dir: str | None = None, model: str | None = None) -> None:
         """Initialize ResumeCrew.
 
         resume_pdf_path: path to a PDF resume file (relative to project root or absolute). If None, falls back to the sample CV_Mohan.pdf in the knowledge folder.
         out_dir: directory where task outputs should be written. If None, defaults to 'output/'.
         """
+        import os
         # Determine resume knowledge source
         if resume_pdf_path:
             self.resume_pdf = PDFKnowledgeSource(file_paths=resume_pdf_path)
         else:
             self.resume_pdf = PDFKnowledgeSource(file_paths="CV_Mohan.pdf")
+
+        # Resolve model: parameter > env var > default
+        self.model = model or os.getenv("RESUME_CREW_MODEL") or "free-optimal"
 
         # Output directory for generated files
         from pathlib import Path
@@ -38,7 +42,7 @@ class ResumeCrew():
         return Agent(
             config=self.agents_config['resume_analyzer'],
             verbose=True,
-            llm=LLM("o1"),
+        llm=LLM(self.model),
             knowledge_sources=[self.resume_pdf]
         )
     
@@ -48,7 +52,7 @@ class ResumeCrew():
             config=self.agents_config['job_analyzer'],
             verbose=True,
             tools=[ScrapeWebsiteTool()],
-            llm=LLM("o1")
+        llm=LLM(self.model)
         )
 
     @agent
@@ -57,7 +61,7 @@ class ResumeCrew():
             config=self.agents_config['company_researcher'],
             verbose=True,
             tools=[SerperDevTool()],
-            llm=LLM("o1"),
+        llm=LLM(self.model),
             knowledge_sources=[self.resume_pdf]
         )
 
@@ -66,7 +70,7 @@ class ResumeCrew():
         return Agent(
             config=self.agents_config['resume_writer'],
             verbose=True,
-            llm=LLM("o1")
+        llm=LLM(self.model)
         )
 
     @agent

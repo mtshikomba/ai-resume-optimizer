@@ -31,6 +31,20 @@ def main():
             uploaded_resume = st.file_uploader("Upload resume (PDF)", type=["pdf"])
 
         custom_cover = st.text_area("Optional: custom text to mention in the cover letter", height=150)
+
+        # Advanced options (hidden by default)
+        advanced = st.checkbox("Show advanced options (model selection)")
+        model_choice = None
+        if advanced:
+            model_options = ["Free (free-optimal)", "o1", "gpt-4", "Other"]
+            sel = st.selectbox("Model (advanced)", model_options, index=0)
+            if sel == "Other":
+                model_choice = st.text_input("Model identifier (e.g., my-org/custom-model)")
+            elif sel == "Free (free-optimal)":
+                model_choice = "free-optimal"
+            else:
+                model_choice = sel
+
         submitted = st.form_submit_button("Generate")
 
     if submitted:
@@ -52,6 +66,9 @@ def main():
             "job_url": job_url or "",
             "custom_cover_text_provided": bool(custom_cover),
         }
+        # Save model selection if the user overrode the default
+        if advanced and model_choice:
+            meta["model"] = model_choice
 
         # Save job file if uploaded
         if job_file:

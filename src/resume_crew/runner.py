@@ -3,7 +3,7 @@ from pathlib import Path
 from resume_crew.crew import ResumeCrew
 
 
-def run_from_inputs(inputs_json_path: str, timeout_seconds: int = 300, poll_interval: float = 2.0) -> dict:
+def run_from_inputs(inputs_json_path: str, timeout_seconds: int = 300, poll_interval: float = 2.0, model_override: str | None = None) -> dict:
     """Run the ResumeCrew pipeline using the inputs.json produced by the Streamlit UI.
 
     inputs_json_path: path to inputs.json file saved by the UI (contains company, job_title, job_url, resume_file, custom_cover_file)
@@ -31,8 +31,12 @@ def run_from_inputs(inputs_json_path: str, timeout_seconds: int = 300, poll_inte
         except Exception:
             custom_cover = None
 
-    # Instantiate the crew with resume and output directory
-    crew = ResumeCrew(resume_pdf_path=resume_file, out_dir=str(out_dir))
+    # Determine model override from inputs (if any); CLI-provided model_override takes precedence
+    meta_model = meta.get("model")
+    model_to_use = model_override or meta_model
+
+    # Instantiate the crew with resume, output directory, and optional model
+    crew = ResumeCrew(resume_pdf_path=resume_file, out_dir=str(out_dir), model=model_to_use)
 
     # Prepare inputs for the crew kickoff
     kickoff_inputs = {
