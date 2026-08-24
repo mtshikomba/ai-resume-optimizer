@@ -59,6 +59,15 @@ def main():
             save_uploaded_file(job_file, job_dest)
             meta["job_file"] = str(job_dest)
 
+        # If a job URL was provided, try to fetch and extract text
+        if job_url:
+            try:
+                from resume_crew.utils.job import fetch_and_save_job
+                fetch_meta = fetch_and_save_job(job_url, out_dir)
+                meta["job_url_fetch"] = fetch_meta
+            except Exception as e:
+                meta["job_url_fetch_error"] = str(e)
+
         # Handle resume
         if uploaded_resume:
             resume_dest = out_dir / f"resume{Path(uploaded_resume.name).suffix}"
