@@ -132,6 +132,29 @@ generate_resume_task:
   agent: resume_writer
   context: [optimize_resume_task, analyze_job_task, research_company_task]
 
+# New task: generate_cover_letter_task
+generate_cover_letter_task:
+  description: >
+    Create a tailored cover letter in markdown based on the job analysis, resume optimization suggestions, and optional custom cover text provided by the user.
+
+    1. Inputs:
+       - Job analysis (from analyze_job_task)
+       - Resume optimization results (from optimize_resume_task)
+       - Company research (from research_company_task)
+       - Optional custom cover text file provided by the user (use it to personalize tone/points)
+
+    2. Content Requirements:
+       - One-page professional cover letter in markdown
+       - Strong opening paragraph referencing the company and role
+       - Middle paragraph(s) linking key achievements/skills to job requirements
+       - Closing paragraph with a call-to-action and contact details
+       - Maintain ATS-safe formatting and natural, human tone
+
+  expected_output: >
+    A polished cover letter in markdown format saved as cover_letter.md.
+  agent: resume_writer
+  context: [optimize_resume_task, analyze_job_task, research_company_task]
+
 generate_report_task:
   description: >
     Create an executive summary report using data from previous steps. 

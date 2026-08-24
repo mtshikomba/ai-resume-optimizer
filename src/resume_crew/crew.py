@@ -109,6 +109,13 @@ class ResumeCrew():
         )
 
     @task
+    def generate_cover_letter_task(self) -> Task:
+        return Task(
+            config=self.tasks_config['generate_cover_letter_task'],
+            output_file=str(self.out_dir / 'cover_letter.md')
+        )
+
+    @task
     def generate_report_task(self) -> Task:
         return Task(
             config=self.tasks_config['generate_report_task'],
