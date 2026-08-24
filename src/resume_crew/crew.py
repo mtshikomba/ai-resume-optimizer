@@ -16,9 +16,22 @@ class ResumeCrew():
     agents_config = 'config/agents.yaml'
     tasks_config = 'config/tasks.yaml'
 
-    def __init__(self) -> None:
-        """Sample resume PDF for testing from https://www.hbs.edu/doctoral/Documents/job-market/CV_Mohan.pdf"""
-        self.resume_pdf = PDFKnowledgeSource(file_paths="CV_Mohan.pdf")
+    def __init__(self, resume_pdf_path: str | None = None, out_dir: str | None = None) -> None:
+        """Initialize ResumeCrew.
+
+        resume_pdf_path: path to a PDF resume file (relative to project root or absolute). If None, falls back to the sample CV_Mohan.pdf in the knowledge folder.
+        out_dir: directory where task outputs should be written. If None, defaults to 'output/'.
+        """
+        # Determine resume knowledge source
+        if resume_pdf_path:
+            self.resume_pdf = PDFKnowledgeSource(file_paths=resume_pdf_path)
+        else:
+            self.resume_pdf = PDFKnowledgeSource(file_paths="CV_Mohan.pdf")
+
+        # Output directory for generated files
+        from pathlib import Path
+        self.out_dir = Path(out_dir) if out_dir else Path("output")
+        self.out_dir.mkdir(parents=True, exist_ok=True)
 
     @agent
     def resume_analyzer(self) -> Agent:
@@ -68,7 +81,7 @@ class ResumeCrew():
     def analyze_job_task(self) -> Task:
         return Task(
             config=self.tasks_config['analyze_job_task'],
-            output_file='output/job_analysis.json',
+            output_file=str(self.out_dir / 'job_analysis.json'),
             output_pydantic=JobRequirements
         )
 
@@ -76,7 +89,7 @@ class ResumeCrew():
     def optimize_resume_task(self) -> Task:
         return Task(
             config=self.tasks_config['optimize_resume_task'],
-            output_file='output/resume_optimization.json',
+            output_file=str(self.out_dir / 'resume_optimization.json'),
             output_pydantic=ResumeOptimization
         )
 
@@ -84,7 +97,7 @@ class ResumeCrew():
     def research_company_task(self) -> Task:
         return Task(
             config=self.tasks_config['research_company_task'],
-            output_file='output/company_research.json',  
+            output_file=str(self.out_dir / 'company_research.json'),  
             output_pydantic=CompanyResearch
         )
 
@@ -92,14 +105,14 @@ class ResumeCrew():
     def generate_resume_task(self) -> Task:
         return Task(
             config=self.tasks_config['generate_resume_task'],
-            output_file='output/optimized_resume.md'
+            output_file=str(self.out_dir / 'optimized_resume.md')
         )
 
     @task
     def generate_report_task(self) -> Task:
         return Task(
             config=self.tasks_config['generate_report_task'],
-            output_file='output/final_report.md'
+            output_file=str(self.out_dir / 'final_report.md')
         )
 
     @crew
