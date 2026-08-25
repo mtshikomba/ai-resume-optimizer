@@ -28,7 +28,13 @@ def main():
                 st.info("No sample resumes found in the knowledge folder. Upload instead.")
                 uploaded_resume = st.file_uploader("Upload resume (PDF)", type=["pdf"])
         else:
-            uploaded_resume = st.file_uploader("Upload resume (PDF)", type=["pdf"])
+            uploaded_resume = st.file_uploader("Upload resume (PDF)", type=["pdf"]) 
+
+        # Also offer an explicit alternative uploader so users can upload even when sample resumes exist
+        if not uploaded_resume:
+            alt = st.file_uploader("Or upload resume (PDF)", type=["pdf"]) 
+            if alt:
+                uploaded_resume = alt
 
         custom_cover = st.text_area("Optional: custom text to mention in the cover letter", height=150)
 
@@ -164,7 +170,7 @@ def main():
                     elif provider_choice == "huggingface":
                         env_key = "HUGGINGFACE_API_KEY"
                     else:
-                        env_key = f"{(provider_choice or "").upper()}_API_KEY"
+                        env_key = (provider_choice or "").upper() + "_API_KEY"
                     if env_key:
                         env[env_key] = provider_api_key
 
